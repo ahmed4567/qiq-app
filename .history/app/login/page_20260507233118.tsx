@@ -117,16 +117,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   <div>
     Password: <span className="text-white">{credentials.password}</span>
   </div>
-</div>{credentials && (
-  <div className="mt-2 space-y-1 text-[var(--muted)]">
-    <div>
-      Email: <span className="text-white">{credentials.email}</span>
-    </div>
-    <div>
-      Password: <span className="text-white">{credentials.password}</span>
-    </div>
-  </div>
-)}
+</div>
             </div>
 
             <div className="mt-5 space-y-4">

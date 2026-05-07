@@ -109,24 +109,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
             <div className="mt-5 rounded-2xl border border-[var(--brand-pink)]/30 bg-[rgba(205,31,141,0.12)] p-4 text-sm text-white">
               <div className="font-medium">Default credentials for {roleMeta[role].title}</div>
-           {/** Before — assumes credentials is always defined*/}
-<div className="mt-2 space-y-1 text-[var(--muted)]">
-  <div>
-    Email: <span className="text-white">{credentials.email}</span>
-  </div>
-  <div>
-    Password: <span className="text-white">{credentials.password}</span>
-  </div>
-</div>{credentials && (
-  <div className="mt-2 space-y-1 text-[var(--muted)]">
-    <div>
-      Email: <span className="text-white">{credentials.email}</span>
-    </div>
-    <div>
-      Password: <span className="text-white">{credentials.password}</span>
-    </div>
-  </div>
-)}
+              <div className="mt-2 space-y-1 text-[var(--muted)]">
+                <div>
+                  Email: <span className="text-white">{credentials.email}</span>
+                </div>
+                <div>
+                  Password: <span className="text-white">{credentials.password}</span>
+                </div>
+              </div>
             </div>
 
             <div className="mt-5 space-y-4">
