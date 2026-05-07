@@ -47,8 +47,8 @@ export const DEV_LOGIN_CREDENTIALS: DevLoginCredentials[] = [
     agentId: process.env.DEV_LOGIN_AGENT_ID ?? "A-1042",
   },
 ];
-{/**export const DEV_LOGIN_ENABLED = process.env.ALLOW_DEV_LOGIN !== "false" && process.env.NODE_ENV !== "production";
-*/}
+export const DEV_LOGIN_ENABLED = process.env.ALLOW_DEV_LOGIN !== "false" && process.env.NODE_ENV !== "production";
+
 function getSecret(): string {
   const configuredSecret = process.env.SESSION_SECRET ?? process.env.GOOGLE_SESSION_SECRET;
 

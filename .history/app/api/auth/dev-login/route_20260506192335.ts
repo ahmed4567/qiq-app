@@ -10,9 +10,9 @@ import {
 } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
-  {/**if (!DEV_LOGIN_ENABLED) {
+  if (!DEV_LOGIN_ENABLED) {
     return NextResponse.redirect(new URL("/login?error=dev-disabled", request.url));
-  }*/}
+  }
 
   const formData = await request.formData();
   const email = String(formData.get("email") ?? "");
