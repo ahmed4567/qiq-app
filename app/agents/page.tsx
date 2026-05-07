@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { AppShell } from "../../components/app-shell";
+import { PageFrame } from "../../components/page-frame";
 import { Pill, SectionHeader } from "../../components/ui";
 import { getAgentsData } from "@/lib/portal-data";
-import { requireSession } from "@/lib/session";
+import { requireAnyRole } from "@/lib/session";
 
 export default async function AgentsPage() {
-  await requireSession();
+  await requireAnyRole(["admin", "reviewer"]);
   const data = await getAgentsData();
 
   return (
-    <AppShell
+    <PageFrame
+      role="reviewer"
       eyebrow="Agents"
       title="Agent performance roster"
       subtitle="A searchable-style roster for the quality team, rebuilt for Next.js."
@@ -29,7 +30,7 @@ export default async function AgentsPage() {
                   <div className="text-xs uppercase tracking-[0.3em] text-[var(--brand-peach)]">{agent.id}</div>
                   <div className="mt-2 text-xl font-semibold text-white">{agent.name}</div>
                   <div className="mt-1 text-sm text-[var(--muted)]">
-                    {agent.team} · {agent.role}
+                    {agent.team} � {agent.role}
                   </div>
                 </div>
                 <div className="text-right">
@@ -46,6 +47,7 @@ export default async function AgentsPage() {
           ))}
         </div>
       </div>
-    </AppShell>
+    </PageFrame>
   );
 }
+

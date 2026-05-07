@@ -88,6 +88,7 @@ export async function exchangeCodeForUser(code: string): Promise<SessionUser> {
     email: profile.email,
     picture: profile.picture,
     provider: "google",
+    role: "reviewer",
   };
 }
 
@@ -100,4 +101,3 @@ export function createOAuthState(): string {
 }
 
 export const OAUTH_STATE_COOKIE_NAME = OAUTH_STATE_COOKIE;
-

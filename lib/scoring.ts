@@ -51,6 +51,15 @@ export const CASE_TYPES = [
 
 export type CriterionKey = (typeof CRITERIA)[number]["key"];
 export type ScoreInput = Partial<Record<CriterionKey, string>>;
+export type KpiTier = "excellent" | "good" | "fair" | "low" | "poor";
+
+const KPI_BANDS: Array<{ minScore: number; tier: KpiTier; percent: number; label: string }> = [
+  { minScore: 85.0000001, tier: "excellent", percent: 40, label: "40%" },
+  { minScore: 75, tier: "good", percent: 25, label: "25%" },
+  { minScore: 60, tier: "fair", percent: 10, label: "10%" },
+  { minScore: 50, tier: "low", percent: 5, label: "5%" },
+  { minScore: Number.NEGATIVE_INFINITY, tier: "poor", percent: 0, label: "0%" },
+];
 
 export function calculateScore(data: ScoreInput, autoFail = false): number {
   if (autoFail) {
@@ -69,35 +78,20 @@ export function calculateScore(data: ScoreInput, autoFail = false): number {
 }
 
 export function kpiPercent(score: number): number {
-  if (score > 85) {
-    return 40;
-  }
-  if (score >= 75) {
-    return 25;
-  }
-  if (score >= 60) {
-    return 10;
-  }
-  if (score >= 50) {
-    return 5;
-  }
-  return 0;
+  return getKpiBand(score).percent;
 }
 
-export function kpiTier(score: number): "excellent" | "good" | "fair" | "low" | "poor" {
-  if (score > 85) {
-    return "excellent";
-  }
-  if (score >= 75) {
-    return "good";
-  }
-  if (score >= 60) {
-    return "fair";
-  }
-  if (score >= 50) {
-    return "low";
-  }
-  return "poor";
+export function kpiTier(score: number): KpiTier {
+  return getKpiBand(score).tier;
+}
+
+export function getKpiBand(score: number): { tier: KpiTier; percent: number; label: string } {
+  const band = KPI_BANDS.find((candidateBand) => score >= candidateBand.minScore) ?? KPI_BANDS[KPI_BANDS.length - 1];
+  return {
+    tier: band.tier,
+    percent: band.percent,
+    label: band.label,
+  };
 }
 
 export function tierColor(tier: string): string {

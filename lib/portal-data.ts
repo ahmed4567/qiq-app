@@ -1,23 +1,42 @@
 import "server-only";
 
+import { cache } from "react";
 import { agents as mockAgents, disputes as mockDisputes, evaluations as mockEvaluations, metrics as mockMetrics, monthlyAverageScore } from "./mock-data";
 import type { AgentRecord, DisputeRecord, EvaluationRecord, PortalMetric } from "./sheets";
-import { computeMetrics, getLiveAgents, getLiveDisputes, getLiveEvaluations, getLivePortalData } from "./sheets";
+import { computeMetrics, getLivePortalData } from "./sheets";
 
 function fallbackMetrics(): PortalMetric[] {
-  return mockMetrics as unknown as PortalMetric[];
+  return mockMetrics.map((metric) => ({ ...metric }));
 }
 
+function fallbackAgents(): AgentRecord[] {
+  return mockAgents.map((agent) => ({ ...agent }));
+}
+
+function fallbackEvaluations(): EvaluationRecord[] {
+  return mockEvaluations.map((evaluation) => ({ ...evaluation }));
+}
+
+function fallbackDisputes(): DisputeRecord[] {
+  return mockDisputes.map((dispute) => ({ ...dispute }));
+}
+
+const getCachedLivePortalData = cache(async () => getLivePortalData());
+
 export async function getOverviewData() {
-  const live = await getLivePortalData();
+  const live = await getCachedLivePortalData();
 
   if (!live) {
+    const agents = fallbackAgents();
+    const evaluations = fallbackEvaluations();
+    const disputes = fallbackDisputes();
+
     return {
       metrics: fallbackMetrics(),
-      topPerformers: mockAgents.slice(0, 3),
-      evaluations: mockEvaluations,
-      agents: mockAgents,
-      disputes: mockDisputes,
+      topPerformers: agents.slice(0, 3),
+      evaluations,
+      agents,
+      disputes,
       monthlyAverageScore,
       source: "mock" as const,
     };
@@ -46,17 +65,17 @@ export async function getDashboardData() {
 }
 
 export async function getAgentsData(): Promise<{ agents: AgentRecord[]; source: "live" | "mock" }> {
-  const liveAgents = await getLiveAgents();
+  const liveData = await getCachedLivePortalData();
 
-  if (liveAgents) {
-    return { agents: liveAgents, source: "live" };
+  if (liveData) {
+    return { agents: liveData.agents, source: "live" };
   }
 
-  return { agents: mockAgents as unknown as AgentRecord[], source: "mock" };
+  return { agents: fallbackAgents(), source: "mock" };
 }
 
 export async function getAgentData(id: string): Promise<{ agent: AgentRecord; evaluations: EvaluationRecord[]; source: "live" | "mock" }> {
-  const liveData = await getLivePortalData();
+  const liveData = await getCachedLivePortalData();
 
   if (liveData) {
     const agent = liveData.agents.find((entry) => entry.id === id) ?? liveData.agents[0];
@@ -64,27 +83,29 @@ export async function getAgentData(id: string): Promise<{ agent: AgentRecord; ev
     return { agent, evaluations, source: "live" };
   }
 
-  const agent = (mockAgents as unknown as AgentRecord[]).find((entry) => entry.id === id) ?? (mockAgents as unknown as AgentRecord[])[0];
-  const evaluations = (mockEvaluations as unknown as EvaluationRecord[]).filter((entry) => entry.agentId === agent.id);
+  const fallbackAgentList = fallbackAgents();
+  const fallbackEvaluationList = fallbackEvaluations();
+  const agent = fallbackAgentList.find((entry) => entry.id === id) ?? fallbackAgentList[0];
+  const evaluations = fallbackEvaluationList.filter((entry) => entry.agentId === agent.id);
   return { agent, evaluations, source: "mock" };
 }
 
 export async function getEvaluationsData(): Promise<{ evaluations: EvaluationRecord[]; source: "live" | "mock" }> {
-  const liveEvaluations = await getLiveEvaluations();
+  const liveData = await getCachedLivePortalData();
 
-  if (liveEvaluations) {
-    return { evaluations: liveEvaluations, source: "live" };
+  if (liveData) {
+    return { evaluations: liveData.evaluations, source: "live" };
   }
 
-  return { evaluations: mockEvaluations as unknown as EvaluationRecord[], source: "mock" };
+  return { evaluations: fallbackEvaluations(), source: "mock" };
 }
 
 export async function getDisputesData(): Promise<{ disputes: DisputeRecord[]; source: "live" | "mock" }> {
-  const liveDisputes = await getLiveDisputes();
+  const liveData = await getCachedLivePortalData();
 
-  if (liveDisputes) {
-    return { disputes: liveDisputes, source: "live" };
+  if (liveData) {
+    return { disputes: liveData.disputes, source: "live" };
   }
 
-  return { disputes: mockDisputes as unknown as DisputeRecord[], source: "mock" };
+  return { disputes: fallbackDisputes(), source: "mock" };
 }

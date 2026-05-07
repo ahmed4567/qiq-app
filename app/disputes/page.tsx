@@ -1,14 +1,15 @@
-import { AppShell } from "../../components/app-shell";
+import { PageFrame } from "../../components/page-frame";
 import { Pill, SectionHeader } from "../../components/ui";
 import { getDisputesData } from "@/lib/portal-data";
-import { requireSession } from "@/lib/session";
+import { requireRole } from "@/lib/session";
 
 export default async function DisputesPage() {
-  await requireSession();
+  await requireRole("reviewer");
   const data = await getDisputesData();
 
   return (
-    <AppShell
+    <PageFrame
+      role="reviewer"
       eyebrow="Disputes"
       title="Dispute resolution queue"
       subtitle="A queue for contested evaluations, escalations, and review notes."
@@ -24,7 +25,7 @@ export default async function DisputesPage() {
                   <div className="text-xs uppercase tracking-[0.3em] text-[var(--brand-peach)]">{dispute.id}</div>
                   <div className="mt-2 text-xl font-semibold text-white">{dispute.agentName}</div>
                   <div className="mt-1 text-sm text-[var(--muted)]">
-                    Evaluation {dispute.evaluationId} · {dispute.updatedAt}
+                    Evaluation {dispute.evaluationId} � {dispute.updatedAt}
                   </div>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">{dispute.reason}</p>
                 </div>
@@ -37,6 +38,7 @@ export default async function DisputesPage() {
           ))}
         </div>
       </div>
-    </AppShell>
+    </PageFrame>
   );
 }
+

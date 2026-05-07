@@ -1,23 +1,31 @@
-import { AppShell } from "../../../components/app-shell";
+import { PageFrame } from "../../../components/page-frame";
 import { Pill, SectionHeader } from "../../../components/ui";
 import { getAgentData } from "@/lib/portal-data";
-import { requireSession } from "@/lib/session";
+import { redirectToRoleHome, requireAnyRole } from "@/lib/session";
+import { getKpiBand } from "@/lib/scoring";
 
 type AgentPageProps = {
   params: Promise<{ id: string }>;
 };
 
 export default async function AgentPage({ params }: AgentPageProps) {
-  await requireSession();
+  const user = await requireAnyRole(["admin", "reviewer", "agent"]);
   const { id } = await params;
+
+  if (user.role === "agent" && user.agentId !== id) {
+    redirectToRoleHome(user);
+  }
+
   const data = await getAgentData(id);
   const agent = data.agent;
+  const currentBand = getKpiBand(agent.score);
 
   return (
-    <AppShell
+    <PageFrame
+      role="reviewer"
       eyebrow="Agent detail"
       title={agent.name}
-      subtitle={`${agent.team} · ${agent.role} · ${agent.id}`}
+      subtitle={`${agent.team} � ${agent.role} � ${agent.id}`}
     >
       {/* Agent summary: gives the reviewer context before opening individual cases. */}
       <section className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
@@ -32,8 +40,8 @@ export default async function AgentPage({ params }: AgentPageProps) {
             <Pill tone="pink">{agent.trend}</Pill>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {[
-              ["Current tier", agent.score >= 85 ? "excellent" : agent.score >= 75 ? "good" : "fair"],
+              {[
+              ["Current tier", currentBand.tier],
               ["Last review", agent.lastReview],
               ["Main case", agent.caseType],
             ].map(([label, value]) => (
@@ -55,7 +63,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
                   <div>
                     <div className="font-medium text-white">{evaluation.caseType}</div>
                     <div className="text-sm text-[var(--muted)]">
-                      {evaluation.reviewer} · {evaluation.date}
+                      {evaluation.reviewer} � {evaluation.date}
                     </div>
                   </div>
                   <div className="text-right">
@@ -68,6 +76,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
           </div>
         </div>
       </section>
-    </AppShell>
+    </PageFrame>
   );
 }
+

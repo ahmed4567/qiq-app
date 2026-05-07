@@ -2,6 +2,7 @@ import "server-only";
 
 import { google } from "googleapis";
 import { getOptionalEnv, getRequiredEnv, hasSheetsConfig } from "./env";
+import { getKpiBand } from "./scoring";
 
 type RowMap = Record<string, string>;
 
@@ -199,7 +200,7 @@ export function computeMetrics(agents: AgentRecord[], evaluations: EvaluationRec
   const activeDisputes = disputes.filter((dispute) => dispute.status.toLowerCase() !== "resolved").length;
   const pendingEvaluations = evaluations.filter((evaluation) => evaluation.status.toLowerCase() === "pending").length;
   const publishedReviews = evaluations.filter((evaluation) => evaluation.status.toLowerCase() !== "draft").length;
-  const payoutBand = averageScore > 85 ? "40%" : averageScore >= 75 ? "25%" : averageScore >= 60 ? "10%" : averageScore >= 50 ? "5%" : "0%";
+  const payoutBand = getKpiBand(averageScore).label;
 
   return [
     { label: "Published reviews", value: String(publishedReviews || agents.length || 0), delta: agents.length ? `${agents.length} agents` : "Live data" },
@@ -208,4 +209,3 @@ export function computeMetrics(agents: AgentRecord[], evaluations: EvaluationRec
     { label: "KPI payout pool", value: payoutBand, delta: "Monthly band" },
   ];
 }
-

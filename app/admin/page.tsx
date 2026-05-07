@@ -1,19 +1,20 @@
-import { AppShell } from "../../components/app-shell";
+import { PageFrame } from "../../components/page-frame";
 import { Pill, SectionHeader } from "../../components/ui";
-import { requireSession } from "@/lib/session";
+import { requireRole } from "@/lib/session";
 
 export default async function AdminPage() {
-  await requireSession();
+  await requireRole("admin");
 
   return (
-    <AppShell
+    <PageFrame
+      role="admin"
       eyebrow="Admin"
       title="Portal administration"
       subtitle="Settings, reviewer controls, sync status, and role management."
     >
       {/* Admin tools: access, sync, and workflow control for supervisors. */}
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="glass-panel rounded-[28px] p-7">
+        <div className="glass-panel rounded-[28px] p-5 sm:p-7">
           <SectionHeader title="Controls" subtitle="Simple admin cards for the initial migration pass." />
           <div className="space-y-3">
             {["Manage reviewers", "Refresh Sheets sync", "Adjust score weights", "Archive old evaluations"].map((item) => (
@@ -25,7 +26,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <div className="glass-panel rounded-[28px] p-7">
+        <div className="glass-panel rounded-[28px] p-5 sm:p-7">
           <SectionHeader title="Configuration" subtitle="Where the FastAPI environment variables and auth config will land." />
           <div className="space-y-3 text-sm text-[var(--muted)]">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">Google Sheets service account credentials</div>
@@ -35,6 +36,7 @@ export default async function AdminPage() {
           </div>
         </div>
       </section>
-    </AppShell>
+    </PageFrame>
   );
 }
+

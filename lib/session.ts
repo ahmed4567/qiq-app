@@ -3,12 +3,19 @@ import "server-only";
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { PortalRole, PortalUserSummary } from "./roles";
 
-export type SessionUser = {
+export type SessionUser = PortalUserSummary & {
+  provider: "google" | "local";
+};
+
+export type DevLoginCredentials = {
   name: string;
   email: string;
-  picture?: string;
-  provider: "google";
+  password: string;
+  role: PortalRole;
+  agentId?: string;
+  reviewerId?: string;
 };
 
 type SessionPayload = SessionUser & {
@@ -18,9 +25,43 @@ type SessionPayload = SessionUser & {
 
 const SESSION_COOKIE_NAME = "qiq_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const DEV_LOGIN_CREDENTIALS: DevLoginCredentials[] = [
+  {
+    role: "admin",
+    name: process.env.DEV_LOGIN_ADMIN_NAME ?? "Demo Admin",
+    email: process.env.DEV_LOGIN_ADMIN_EMAIL ?? "admin@bedsxml.local",
+    password: process.env.DEV_LOGIN_ADMIN_PASSWORD ?? "admin1234",
+  },
+  {
+    role: "reviewer",
+    name: process.env.DEV_LOGIN_REVIEWER_NAME ?? "Demo Reviewer",
+    email: process.env.DEV_LOGIN_REVIEWER_EMAIL ?? "reviewer@bedsxml.local",
+    password: process.env.DEV_LOGIN_REVIEWER_PASSWORD ?? "reviewer1234",
+    reviewerId: process.env.DEV_LOGIN_REVIEWER_ID ?? "R-001",
+  },
+  {
+    role: "agent",
+    name: process.env.DEV_LOGIN_AGENT_NAME ?? "Demo Agent",
+    email: process.env.DEV_LOGIN_AGENT_EMAIL ?? "agent@bedsxml.local",
+    password: process.env.DEV_LOGIN_AGENT_PASSWORD ?? "agent1234",
+    agentId: process.env.DEV_LOGIN_AGENT_ID ?? "A-1042",
+  },
+];
+export const DEV_LOGIN_ENABLED = process.env.ALLOW_DEV_LOGIN !== "false" && process.env.NODE_ENV !== "production";
 
 function getSecret(): string {
-  return process.env.SESSION_SECRET ?? process.env.GOOGLE_SESSION_SECRET ?? "dev-session-secret-change-me";
+  const configuredSecret = process.env.SESSION_SECRET ?? process.env.GOOGLE_SESSION_SECRET;
+
+  if (configuredSecret?.trim()) {
+    return configuredSecret;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Missing required session secret. Set SESSION_SECRET or GOOGLE_SESSION_SECRET.");
+  }
+
+  console.warn("[auth] SESSION_SECRET is not set; using development fallback secret.");
+  return "dev-session-secret-change-me";
 }
 
 function base64UrlEncode(value: string): string {
@@ -92,6 +133,9 @@ export function verifySessionCookie(value: string | undefined): SessionUser | nu
     email: payload.email,
     picture: payload.picture,
     provider: payload.provider,
+    role: payload.role,
+    agentId: payload.agentId,
+    reviewerId: payload.reviewerId,
   };
 }
 
@@ -111,13 +155,50 @@ export async function requireSession(redirectTo = "/login"): Promise<SessionUser
   return user;
 }
 
+export function getRoleHomePath(role: PortalRole): string {
+  if (role === "admin") {
+    return "/views/admin";
+  }
+  if (role === "agent") {
+    return "/views/agent";
+  }
+  return "/views/reviewer";
+}
+
+export function redirectToRoleHome(user: SessionUser): never {
+  return redirect(getRoleHomePath(user.role));
+}
+
+export async function requireRole(role: PortalRole): Promise<SessionUser> {
+  const user = await requireSession();
+
+  if (user.role !== role) {
+    redirectToRoleHome(user);
+  }
+
+  return user;
+}
+
+export async function requireAnyRole(roles: PortalRole[]): Promise<SessionUser> {
+  const user = await requireSession();
+
+  if (!roles.includes(user.role)) {
+    redirectToRoleHome(user);
+  }
+
+  return user;
+}
+
 export function createSessionCookieOptions() {
+  const expires = new Date(Date.now() + SESSION_TTL_MS);
+
   return {
     httpOnly: true as const,
     sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_TTL_MS / 1000,
+    expires,
   };
 }
 
@@ -128,7 +209,33 @@ export function clearSessionCookieOptions() {
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 0,
+    expires: new Date(0),
   };
 }
 
 export const SESSION_COOKIE = SESSION_COOKIE_NAME;
+
+export function isDevLoginCredentials(email: string, password: string) {
+  return DEV_LOGIN_CREDENTIALS.some(
+    (credentials) => credentials.email.toLowerCase() === email.trim().toLowerCase() && credentials.password === password,
+  );
+}
+
+export function getDevLoginCredentialsByEmail(email: string) {
+  return DEV_LOGIN_CREDENTIALS.find((credentials) => credentials.email.toLowerCase() === email.trim().toLowerCase()) ?? null;
+}
+
+export function getDevLoginCredentialsByRole(role: PortalRole) {
+  return DEV_LOGIN_CREDENTIALS.find((credentials) => credentials.role === role) ?? DEV_LOGIN_CREDENTIALS[1];
+}
+
+export function createDevSessionUser(credentials: DevLoginCredentials): SessionUser {
+  return {
+    name: credentials.name,
+    email: credentials.email,
+    provider: "local",
+    role: credentials.role,
+    agentId: credentials.agentId,
+    reviewerId: credentials.reviewerId,
+  };
+}

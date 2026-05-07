@@ -13,6 +13,13 @@ This scaffold can run in mock mode, but to wire it to real Google Sheets and Goo
 
 Copy `.env.example` to `.env.local` and fill in those values before starting the app.
 
+For local work while Google auth is still in progress, you can use the temporary demo login:
+
+- Email: `demo@bedsxml.local`
+- Password: `beds1234`
+
+Set `ALLOW_DEV_LOGIN=false` before production so the bypass stays disabled outside development.
+
 The Sheets reader expects these tabs by default:
 
 - `Agents`
